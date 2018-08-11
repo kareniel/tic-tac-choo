@@ -2,6 +2,8 @@ var choo = require('choo')
 var html = require('choo/html')
 var css = require('sheetify')
 
+const THIS_REPO = 'https://github.com/kareniel/tic-tac-choo'
+const CHOO_REPO = 'https://github.com/choojs/choo'
 const X = '🚂'
 const O = '🚃'
 const ENDING = {
@@ -103,8 +105,14 @@ function store (state, emitter) {
 function mainView (state, emit) {
   return html`
     <body class="mt5 flex flex-column items-center">
-      <h1>tic-tac-choo</h1>
+      <h1 class="mb5">tic-tac-choo</h1>
+
       ${gameView(state, emit)}
+
+      <p class="mt5 tc">
+        made with <a href="${CHOO_REPO}">choo</p>.
+        feel free to <a href="${THIS_REPO}">read the source code</a>.
+      </p>
     </body>`
 }
 
