@@ -1,0 +1,25 @@
+{
+  "name": "tic-tac-choo",
+  "version": "1.0.0",
+  "description": "smol tic-tac-toe game",
+  "main": "index.js",
+  "scripts": {
+    "start": "budo index:bundle.js --dir public --live --pushstate -- -t sheetify",
+    "build": "mkdir -p dist && cp public/* dist/ && browserify index.js -o dist/bundle.js -t sheetify",
+    "test": "standard --fix"
+  },
+  "keywords": [
+    "tic-tac-toe",
+    "choo"
+  ],
+  "author": "kareniel",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "choo": "^6.13.0"
+  },
+  "devDependencies": {
+    "budo": "^11.3.2",
+    "sheetify": "^7.3.3",
+    "tachyons": "^4.11.1"
+  }
+}
