@@ -15,10 +15,17 @@
   "author": "kareniel",
   "license": "Apache-2.0",
   "dependencies": {
-    "choo": "^6.13.0"
+    "bytespin": "^2.0.6",
+    "choo": "^6.13.0",
+    "hypercore": "^6.18.1",
+    "multifeed": "^1.3.4",
+    "pull-stream": "^3.6.8",
+    "random-access-memory": "^3.0.0",
+    "stream-to-pull-stream": "^1.7.2"
   },
   "devDependencies": {
     "budo": "^11.3.2",
+    "choo-devtools": "^2.5.1",
     "sheetify": "^7.3.3",
     "tachyons": "^4.11.1"
   }
