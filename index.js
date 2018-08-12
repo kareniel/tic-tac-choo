@@ -27,6 +27,7 @@ function store (state, emitter) {
   })
 
   function reset () {
+    state.waiting = false
     state.rows = [
       [0, 0, 0],
       [0, 0, 0],
@@ -43,19 +44,14 @@ function store (state, emitter) {
   }
 
   function mark (x, y) {
-    if (state.end) return
+    if (state.end || state.waiting) return
     var alreadyMarked = state.rows[y][x] !== 0
     if (alreadyMarked) return
 
     commit(state.player, x, y)
-
     if (state.end) return
 
-    var waiting = true
-
-    while (waiting) {
-      waiting = !ai()
-    }
+    waitForOpponent()
   }
 
   function commit (mark, x, y) {
@@ -72,15 +68,36 @@ function store (state, emitter) {
     emitter.emit('render')
   }
 
-  function ai () {
-    var y = getRandomInt(3)
-    var x = getRandomInt(3)
+  function waitForOpponent () {
+    state.waiting = true
 
-    if (state.rows[y][x]) return false
+    ai((x, y) => {
+      state.waiting = false
+      commit(state.opponent, x, y)
+    })
+  }
 
-    commit(state.opponent, x, y)
+  function ai (cb) {
+    setTimeout(() => {
+      var { x, y } = getRandomCoordinates()
 
-    return true
+      cb(x, y)
+    }, 250)
+  }
+
+  function getRandomCoordinates () {
+    var waiting = true
+    var x = 0
+    var y = 0
+
+    while (waiting) {
+      y = getRandomInt(3)
+      x = getRandomInt(3)
+
+      if (!state.rows[y][x]) waiting = false
+    }
+
+    return { x, y }
   }
 
   function win () {
@@ -101,12 +118,20 @@ function store (state, emitter) {
 
 function mainView (state, emit) {
   return html`
-    <body class="bg-pink mt5 flex flex-column items-center">
+    <body class="bg-pink mt5 flex flex-column justify-center items-center">
       <h1 class="mb5 pinker">
         tic-tac-choo
       </h1>
 
+      <div class="w-100 h3">
+        ${waitingView(state, emit)}
+      </div>
+
       ${gameView(state, emit)}
+
+      <div class="w-100 h4">
+        ${endView(state, emit)}
+      </div>
 
       <p class="mt5 tc">
         made with <a href="${CHOO_REPO}">choo</p>.
@@ -117,31 +142,35 @@ function mainView (state, emit) {
 
 function gameView (state, emit) {
   return html`
-    <div class="flex flex-column">
+    <div class="flex flex-column justify-center items-center">
       ${state.rows.map((row, y) => html`
         <div class="flex flex-row">
           ${row.map((cell, x) => cellView(cell, x, y, emit))}
         </div>
       `)}
-      ${endView(state, emit)}
     </div>`
 }
 
 function cellView (cell, x, y, emit) {
   return html`
-    <div class="w3 h3 f2 ba b--gray bg-white flex justify-center items-center" 
+    <div class="pointer w3 h3 f2 ba b--gray bg-white flex justify-center items-center" 
       onclick=${e => emit('mark', x, y)}>
       ${cell || ''}
     </div>`
 }
 
+function waitingView (state, emit) {
+  if (!state.waiting) return ''
+  return html`<p class="tc">Waiting for opponent to make a move...</p>`
+}
+
 function endView (state, emit) {
   if (!state.end) return ''
   return html`
-    <p class="flex flex-column justify-center w-100">
+    <p class="flex flex-column justify-center items-center w-100 tc">
       <h2>${state.end}</h2>
 
-      <button onclick=${e => emit('reset')}>
+      <button class="w3" onclick=${e => emit('reset')}>
         Reset
       </button>
     </p>`

@@ -1,3 +1,7 @@
+@font-face{
+font-family: Cinetype;
+src: url('https://choo.io/assets/GT-Cinetype-Regular.woff'), 
+url('https://choo.io/assets/GT-Cinetype-Regular.woff') format('woff');}
 body{font-family: Cinetype,sans-serif;}
 .bg-pink{background-color:#ffe5e5;}
 .pinker, h1.pinker{color:#f77;}
