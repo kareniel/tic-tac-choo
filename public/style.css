@@ -1,10 +1,19 @@
 @font-face{
-font-family: Cinetype;
-src: url('https://choo.io/assets/GT-Cinetype-Regular.woff'), 
-url('https://choo.io/assets/GT-Cinetype-Regular.woff') format('woff');}
+  font-family: Cinetype;
+  src: url('GT-Cinetype-Regular.woff'), url('GT-Cinetype-Regular.woff') format('woff');
+}
+html{font-size: calc(1.75vw + 62.5%);}
 body{font-family: Cinetype,sans-serif;}
-.bg-pink{background-color:#ffe5e5;}
-.pinker, h1.pinker{color:#f77;}
-p{color:#111;}
+p{color:#111;line-height:1.5;font-size:1rem;}
 a{color:#f77;}
 a:visited{color:#f77;}
+.bg-pink{background-color:#ffe5e5;}
+.bg-pinker{background-color:#f77;}
+.pinker, h1.pinker{color:#f77;}
+.b--pinker{border-color:#f77;}
+.pink,.pink a,.pink a:visited,.pink p{color:#ffe5e5;}
+.hourglass{animation: rotate 2s infinite ease-out;}
+@keyframes rotate {
+  from {transform: rotate3d(0,0,0,0deg);}
+  to {transform: rotate3d(0,0,1,360deg);}
+}

@@ -1,6 +1,15 @@
+// const PROTOCOL = 'ws'
+// const GATEWAY = 'localhost:8000'
+
 var multifeed = require('multifeed')
 var hypercore = require('hypercore')
 var ram = require('random-access-memory')
+// var websocket = require('websocket-stream')
+// var pump = require('pump')
+
+var Bus = require('./Bus')
+
+// const KEY = '278c4b40dbc2585b6654a55c07b23943ece48264834ae50a87af438f56fb35ff'
 
 module.exports = create
 
@@ -8,22 +17,34 @@ function create () {
   return hyperbus
 }
 
-function hyperbus (state, emitter, app) {
+function hyperbus (state, emitter) {
   const storage = () => ram()
   const opts = { valueEncoding: 'json' }
 
-  var log
+  var log = log = multifeed(hypercore, storage, opts)
 
   emitter.on('DOMContentLoaded', () => {
-    log = multifeed(hypercore, storage, opts)
-
     log.writer(onWriter)
   })
 
   function onWriter (err, feedA, id) {
     if (err) throw err
 
-    var remoteLog = multifeed(hypercore, storage, opts)
+    // var remote = websocket(`${PROTOCOL}://${GATEWAY}/feeds/${KEY}`)
+    // var local = feedA.replicate({ encrypt: false, live: true })
+
+    // pump(remote, local, remote, err => {
+    //   if (err) throw err
+    // })
+
+    // var feedBReadStream = remote.createReadStream({ live: true })
+
+    // var bus = new Bus(feedA, feedBReadStream)
+
+    // bus._remote = new Bus(feedB, feedAReadStream)
+
+    // emitter.emit('hyperbus:ready', bus)
+    var remoteLog = multifeed(hypercore, 'BROKE', storage, opts)
 
     remoteLog.writer(function (err, feedB, id) {
       if (err) throw err
@@ -35,35 +56,11 @@ function hyperbus (state, emitter, app) {
 
       r1.pipe(r2).pipe(r1)
 
-      emitter.emit('hyperbus:ready', {
-        local: createBus(feedA, feedBReadStream),
-        remote: createBus(feedB, feedAReadStream)
-      })
+      var bus = new Bus(feedA, feedBReadStream)
+
+      bus._remote = new Bus(feedB, feedAReadStream)
+
+      emitter.emit('hyperbus:ready', bus)
     })
   }
 }
-
-function createBus (feed, stream) {
-  var bus = {
-    _listeners: {},
-    emit (eventName, payload, callback = noop) {
-      var message = { method: eventName, params: payload }
-
-      feed.append(message, callback)
-    },
-    once (eventName, callback) {
-      this._listeners[eventName] = callback
-    }
-  }
-
-  stream.on('data', message => {
-    var handler = bus._listeners[message.method]
-    if (!handler) return
-    handler(message.params)
-    bus._listeners[message.method] = null
-  })
-
-  return bus
-}
-
-function noop () {}

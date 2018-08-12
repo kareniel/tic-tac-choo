@@ -14,7 +14,7 @@ const ENDING = {
 }
 
 var app = choo()
-var spinner = Spinner({ chars: '⌛⏳', speed: 500 })
+var spinner = Spinner({ chars: '⌛⏳⏳⏳⏳⌛', speed: 2000 / 6 })
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(devtools())
@@ -66,16 +66,16 @@ function store (state, emitter) {
   }
 
   function getReady () {
-    state.hyperbus.local.once('ready', () => {
+    state.hyperbus.once('ready', () => {
       state.ready = true
       emitter.emit('render')
     })
 
-    state.hyperbus.local.emit('ready')
+    state.hyperbus.emit('ready')
 
-    setTimeout(() => {
-      state.hyperbus.remote.emit('ready')
-    }, randomDelay() * 3)
+    // setTimeout(() => {
+    //   state.hyperbus.remote.emit('ready')
+    // }, randomDelay() * 3)
   }
 
   function mark (x, y) {
@@ -85,7 +85,7 @@ function store (state, emitter) {
 
     if (state.end) return
 
-    state.hyperbus.local.emit('mark', { x, y }, () => {
+    state.hyperbus.emit('mark', { x, y }, () => {
       waitForOpponent()
     })
   }
@@ -108,36 +108,36 @@ function store (state, emitter) {
     state.waiting = true
     emitter.emit('render')
 
-    state.hyperbus.local.once('mark', payload => {
+    state.hyperbus.once('mark', payload => {
       state.waiting = false
       commit(state.opponent, payload.x, payload.y)
     })
 
-    ai()
+    // ai()
   }
 
-  function ai () {
-    var { x, y } = getRandomCoordinates()
+  // function ai () {
+  //   var { x, y } = getRandomCoordinates()
 
-    setTimeout(() => {
-      state.hyperbus.remote.emit('mark', { x, y })
-    }, randomDelay())
-  }
+  //   setTimeout(() => {
+  //     state.hyperbus.remote.emit('mark', { x, y })
+  //   }, randomDelay())
+  // }
 
-  function getRandomCoordinates () {
-    var waiting = true
-    var x = 0
-    var y = 0
+  // function getRandomCoordinates () {
+  //   var waiting = true
+  //   var x = 0
+  //   var y = 0
 
-    while (waiting) {
-      y = getRandomInt(3)
-      x = getRandomInt(3)
+  //   while (waiting) {
+  //     y = getRandomInt(3)
+  //     x = getRandomInt(3)
 
-      if (!state.rows[y][x]) waiting = false
-    }
+  //     if (!state.rows[y][x]) waiting = false
+  //   }
 
-    return { x, y }
-  }
+  //   return { x, y }
+  // }
 
   function isYourTurn () {
     return state.ready && !state.waiting && !state.end
@@ -168,31 +168,29 @@ function store (state, emitter) {
 
 function mainView (state, emit) {
   return html`
-    <body class="bg-pink mt5 flex flex-column justify-center items-center">
-      <h1 class="mb5 pinker">
+    <body class="bg-pink flex flex-column justify-center items-center min-vh-100 relative ba bw3 b--pinker pa2">
+      <h1 class="mb4 pinker fwb">
         tic-tac-choo
       </h1>
 
-      <div class="w-100 h3">
-        ${waitingView(state, emit)}
-      </div>
-
       ${gameView(state, emit)}
 
-      <div class="w-100 h4">
+      <div class="w-100 h4 mt2">
+        ${waitingView(state, emit)}
         ${endView(state, emit)}
       </div>
 
-      <p class="mt5 tc">
-        made with <a href="${CHOO_REPO}">choo</p>.
-        feel free to <a href="${THIS_REPO}">read the source code</a>.
-      </p>
+      <footer class="tc bg-pinker pink ph2 pv0 w-100 absolute bottom-0">
+        <p>
+        <a href="${THIS_REPO}">made</a> with <a href="${CHOO_REPO}">choo</a>.<br>
+        </p>        
+      </footer>
     </body>`
 }
 
 function gameView (state, emit) {
   return html`
-    <div class="flex flex-column justify-center items-center">
+    <div class="flex flex-column justify-center items-center br bb bw2 bw1-l b--pinker">
       ${state.rows.map((row, y) => html`
         <div class="flex flex-row">
           ${row.map((cell, x) => cellView(cell, x, y, emit))}
@@ -203,7 +201,7 @@ function gameView (state, emit) {
 
 function cellView (cell, x, y, emit) {
   return html`
-    <div class="pointer w3 h3 f2 ba b--gray bg-white flex justify-center items-center" 
+    <div class="pointer w3 h3 w2-l h2-l f2 bl bt bw2 bw1-l b--pinker bg-white flex justify-center items-center" 
       onclick=${e => emit('mark', x, y)}>
       ${cell || ''}
     </div>`
@@ -212,9 +210,11 @@ function cellView (cell, x, y, emit) {
 function waitingView (state, emit) {
   if (!state.ready) {
     return html`
-      <p class="tc flex flex-row justify-center">
-        <span class="w2 mr1">${spinner.render(true)}</span> 
-        <span>Waiting for opponent to be ready...</span>
+      <p class="tc flex flex-row justify-center items-center ph3">
+        <span class="hourglass w1 h1 flex justify-center items-center">
+          ${spinner.render(true)}
+        </span> 
+        <span class="ph3">Waiting for opponent to be ready...</span>
       </p>`
   }
   if (!state.waiting) return ''
