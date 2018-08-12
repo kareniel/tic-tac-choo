@@ -73,9 +73,9 @@ function store (state, emitter) {
 
     state.hyperbus.emit('ready')
 
-    // setTimeout(() => {
-    //   state.hyperbus.remote.emit('ready')
-    // }, randomDelay() * 3)
+    setTimeout(() => {
+      state.hyperbus._remote.emit('ready')
+    }, randomDelay() * 3)
   }
 
   function mark (x, y) {
@@ -113,31 +113,31 @@ function store (state, emitter) {
       commit(state.opponent, payload.x, payload.y)
     })
 
-    // ai()
+    ai()
   }
 
-  // function ai () {
-  //   var { x, y } = getRandomCoordinates()
+  function ai () {
+    var { x, y } = getRandomCoordinates()
 
-  //   setTimeout(() => {
-  //     state.hyperbus.remote.emit('mark', { x, y })
-  //   }, randomDelay())
-  // }
+    setTimeout(() => {
+      state.hyperbus._remote.emit('mark', { x, y })
+    }, randomDelay())
+  }
 
-  // function getRandomCoordinates () {
-  //   var waiting = true
-  //   var x = 0
-  //   var y = 0
+  function getRandomCoordinates () {
+    var waiting = true
+    var x = 0
+    var y = 0
 
-  //   while (waiting) {
-  //     y = getRandomInt(3)
-  //     x = getRandomInt(3)
+    while (waiting) {
+      y = getRandomInt(3)
+      x = getRandomInt(3)
 
-  //     if (!state.rows[y][x]) waiting = false
-  //   }
+      if (!state.rows[y][x]) waiting = false
+    }
 
-  //   return { x, y }
-  // }
+    return { x, y }
+  }
 
   function isYourTurn () {
     return state.ready && !state.waiting && !state.end
@@ -175,10 +175,11 @@ function mainView (state, emit) {
 
       ${gameView(state, emit)}
 
-      <div class="w-100 h4 mt2">
+      <div class="w-100 h5 mt2">
         ${waitingView(state, emit)}
         ${endView(state, emit)}
       </div>
+
 
       <footer class="tc bg-pinker pink ph2 pv0 w-100 absolute bottom-0">
         <p>
@@ -201,7 +202,7 @@ function gameView (state, emit) {
 
 function cellView (cell, x, y, emit) {
   return html`
-    <div class="pointer w3 h3 w2-l h2-l f2 bl bt bw2 bw1-l b--pinker bg-white flex justify-center items-center" 
+    <div class="pointer w3 h3 w2-l f3-l h2-l f2 bl bt bw2 bw1-l b--pinker bg-white flex justify-center items-center" 
       onclick=${e => emit('mark', x, y)}>
       ${cell || ''}
     </div>`
@@ -227,7 +228,7 @@ function endView (state, emit) {
     <p class="flex flex-column justify-center items-center w-100 tc">
       <h2>${state.end}</h2>
 
-      <button class="w3" onclick=${e => emit('reset')}>
+      <button class="ph3 pv2 f3 pointer bg-pink pinker b--pinker bw2" onclick=${e => emit('reset')}>
         Reset
       </button>
     </p>`
