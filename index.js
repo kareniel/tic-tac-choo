@@ -1,5 +1,7 @@
 var choo = require('choo')
 var html = require('choo/html')
+var devtools = require('choo-devtools')
+var Spinner = require('bytespin')
 
 const THIS_REPO = 'https://github.com/kareniel/tic-tac-choo'
 const CHOO_REPO = 'https://github.com/choojs/choo'
@@ -12,8 +14,14 @@ const ENDING = {
 }
 
 var app = choo()
+var spinner = Spinner({ chars: '⌛⏳', speed: 500 })
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use(devtools())
+}
 
 app.route('/', mainView)
+app.use(require('./hyperbus')())
 app.use(store)
 
 app.mount('body')
@@ -27,6 +35,7 @@ function store (state, emitter) {
   })
 
   function reset () {
+    state.ready = false
     state.waiting = false
     state.rows = [
       [0, 0, 0],
@@ -41,22 +50,51 @@ function store (state, emitter) {
     state.end = false
 
     emitter.emit('render')
+
+    wait()
+  }
+
+  function wait () {
+    if (!state.hyperbus) {
+      return emitter.on('hyperbus:ready', hyperbus => {
+        state.hyperbus = hyperbus
+        getReady()
+      })
+    }
+
+    getReady()
+  }
+
+  function getReady () {
+    state.hyperbus.local.once('ready', () => {
+      state.ready = true
+      emitter.emit('render')
+    })
+
+    state.hyperbus.local.emit('ready')
+
+    setTimeout(() => {
+      state.hyperbus.remote.emit('ready')
+    }, randomDelay() * 3)
   }
 
   function mark (x, y) {
-    if (state.end || state.waiting) return
-    var alreadyMarked = state.rows[y][x] !== 0
-    if (alreadyMarked) return
+    if (!isYourTurn() || cellIsAlreadyMarked(x, y)) return
 
     commit(state.player, x, y)
+
     if (state.end) return
 
-    waitForOpponent()
+    state.hyperbus.local.emit('mark', { x, y }, () => {
+      waitForOpponent()
+    })
   }
 
   function commit (mark, x, y) {
     state.rows[y][x] = mark
     state.count++
+
+    emitter.emit('render')
 
     var won = didWin(state.player, state.rows)
     var lost = didWin(state.opponent, state.rows)
@@ -64,25 +102,26 @@ function store (state, emitter) {
     if (won) return win()
     if (lost) return lose()
     if (state.count === 9) return draw()
-
-    emitter.emit('render')
   }
 
   function waitForOpponent () {
     state.waiting = true
+    emitter.emit('render')
 
-    ai((x, y) => {
+    state.hyperbus.local.once('mark', payload => {
       state.waiting = false
-      commit(state.opponent, x, y)
+      commit(state.opponent, payload.x, payload.y)
     })
+
+    ai()
   }
 
-  function ai (cb) {
-    setTimeout(() => {
-      var { x, y } = getRandomCoordinates()
+  function ai () {
+    var { x, y } = getRandomCoordinates()
 
-      cb(x, y)
-    }, 250)
+    setTimeout(() => {
+      state.hyperbus.remote.emit('mark', { x, y })
+    }, randomDelay())
   }
 
   function getRandomCoordinates () {
@@ -100,17 +139,28 @@ function store (state, emitter) {
     return { x, y }
   }
 
+  function isYourTurn () {
+    return state.ready && !state.waiting && !state.end
+  }
+
+  function cellIsAlreadyMarked (x, y) {
+    return state.rows[y][x] !== 0
+  }
+
   function win () {
+    state.waiting = false
     state.end = ENDING.win
     emitter.emit('render')
   }
 
   function lose () {
+    state.waiting = false
     state.end = ENDING.lose
     emitter.emit('render')
   }
 
   function draw () {
+    state.waiting = false
     state.end = ENDING.draw
     emitter.emit('render')
   }
@@ -160,6 +210,13 @@ function cellView (cell, x, y, emit) {
 }
 
 function waitingView (state, emit) {
+  if (!state.ready) {
+    return html`
+      <p class="tc flex flex-row justify-center">
+        <span class="w2 mr1">${spinner.render(true)}</span> 
+        <span>Waiting for opponent to be ready...</span>
+      </p>`
+  }
   if (!state.waiting) return ''
   return html`<p class="tc">Waiting for opponent to make a move...</p>`
 }
@@ -213,4 +270,8 @@ function validateDiagonals (mark, rows) {
 
 function getRandomInt (max) {
   return (Math.floor(Math.random() * Math.floor(max)))
+}
+
+function randomDelay () {
+  return (getRandomInt(5) * 250) + 500
 }
