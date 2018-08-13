@@ -1,6 +1,12 @@
+const PROTOCOL = 'ws'
+const GATEWAY = 'localhost:8000'
+
 var multifeed = require('multifeed')
 var hypercore = require('hypercore')
 var ram = require('random-access-memory')
+var websocket = require('websocket-stream')
+var pump = require('pump')
+var crypto = require('crypto')
 
 var Bus = require('./Bus')
 
@@ -14,32 +20,28 @@ function hyperbus (state, emitter) {
   const storage = () => ram()
   const opts = { valueEncoding: 'json' }
 
-  var log = log = multifeed(hypercore, storage, opts)
+  var log = multifeed(hypercore, storage, opts)
 
   emitter.on('DOMContentLoaded', () => {
-    log.writer(onWriter)
+    log.writer('local', onWriter)
   })
 
-  function onWriter (err, feedA, id) {
+  function onWriter (err, feed, id) {
     if (err) throw err
 
-    var remoteLog = multifeed(hypercore, storage, opts)
+    var key = state.query.key || crypto.randomBytes(32).toString('hex')
+    var remote = websocket(`${PROTOCOL}://${GATEWAY}/feeds/${key}`)
+    var local = log.replicate({ encrypt: false, live: true })
 
-    remoteLog.writer(function (err, feedB, id) {
-      if (err) throw err
-
-      var r1 = log.replicate()
-      var r2 = remoteLog.replicate()
-      var feedAReadStream = feedA.createReadStream({ live: true })
-      var feedBReadStream = feedB.createReadStream({ live: true })
-
-      r1.pipe(r2).pipe(r1)
-
-      var bus = new Bus(feedA, feedBReadStream)
-
-      bus._remote = new Bus(feedB, feedAReadStream)
+    log.on('feed', (peerFeed, name) => {
+      var peerFeedStream = peerFeed.createReadStream({ live: true })
+      var bus = new Bus(feed, peerFeedStream)
 
       emitter.emit('hyperbus:ready', bus)
+    })
+
+    pump(remote, local, remote, err => {
+      if (err) throw err
     })
   }
 }

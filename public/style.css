@@ -6,6 +6,7 @@ html{font-size: calc(1.75vw + 62.5%);}
 body{font-family: Cinetype,sans-serif;}
 p{color:#111;line-height:1.5;font-size:1rem;}
 a{color:#f77;}
+button{border-style: solid;}
 a:visited{color:#f77;}
 .bg-pink{background-color:#ffe5e5;}
 .bg-pinker{background-color:#f77;}

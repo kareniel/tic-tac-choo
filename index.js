@@ -72,10 +72,6 @@ function store (state, emitter) {
     })
 
     state.hyperbus.emit('ready')
-
-    setTimeout(() => {
-      state.hyperbus._remote.emit('ready')
-    }, randomDelay() * 3)
   }
 
   function mark (x, y) {
@@ -112,31 +108,6 @@ function store (state, emitter) {
       state.waiting = false
       commit(state.opponent, payload.x, payload.y)
     })
-
-    ai()
-  }
-
-  function ai () {
-    var { x, y } = getRandomCoordinates()
-
-    setTimeout(() => {
-      state.hyperbus._remote.emit('mark', { x, y })
-    }, randomDelay())
-  }
-
-  function getRandomCoordinates () {
-    var waiting = true
-    var x = 0
-    var y = 0
-
-    while (waiting) {
-      y = getRandomInt(3)
-      x = getRandomInt(3)
-
-      if (!state.rows[y][x]) waiting = false
-    }
-
-    return { x, y }
   }
 
   function isYourTurn () {
@@ -167,8 +138,11 @@ function store (state, emitter) {
 }
 
 function mainView (state, emit) {
+  var c = 'bg-pink flex flex-column justify-center items-center ' +
+    'min-vh-100 relative ba bw3 b--pinker pa2'
+
   return html`
-    <body class="bg-pink flex flex-column justify-center items-center min-vh-100 relative ba bw3 b--pinker pa2">
+    <body class=${c}>
       <h1 class="mb4 pinker fwb">
         tic-tac-choo
       </h1>
@@ -183,15 +157,19 @@ function mainView (state, emit) {
 
       <footer class="tc bg-pinker pink ph2 pv0 w-100 absolute bottom-0">
         <p>
-        <a href="${THIS_REPO}">made</a> with <a href="${CHOO_REPO}">choo</a>.<br>
+        <a href="${THIS_REPO}">made</a> with <a href="${CHOO_REPO}">choo</a>.
+        <br>
         </p>        
       </footer>
     </body>`
 }
 
 function gameView (state, emit) {
+  var c = 'flex flex-column justify-center items-center ' +
+    'br bb bw2 bw1-l b--pinker'
+
   return html`
-    <div class="flex flex-column justify-center items-center br bb bw2 bw1-l b--pinker">
+    <div class=${c}>
       ${state.rows.map((row, y) => html`
         <div class="flex flex-row">
           ${row.map((cell, x) => cellView(cell, x, y, emit))}
@@ -201,8 +179,11 @@ function gameView (state, emit) {
 }
 
 function cellView (cell, x, y, emit) {
+  var c = 'pointer w3 h3 w2-l f3-l h2-l f2 bl bt bw2 bw1-l b--pinker bg-white ' +
+    'flex justify-center items-center'
+
   return html`
-    <div class="pointer w3 h3 w2-l f3-l h2-l f2 bl bt bw2 bw1-l b--pinker bg-white flex justify-center items-center" 
+    <div class=${c}
       onclick=${e => emit('mark', x, y)}>
       ${cell || ''}
     </div>`
@@ -228,7 +209,8 @@ function endView (state, emit) {
     <p class="flex flex-column justify-center items-center w-100 tc">
       <h2>${state.end}</h2>
 
-      <button class="ph3 pv2 f3 pointer bg-pink pinker b--pinker bw2" onclick=${e => emit('reset')}>
+      <button class="ph3 pv2 f3 pointer bg-pink pinker b--pinker bw2" 
+        onclick=${e => emit('reset')}>
         Reset
       </button>
     </p>`
